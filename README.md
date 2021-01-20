@@ -4,11 +4,11 @@ After the [OpenLANE ASIC flow](https://github.com/efabless/openlane) has finishe
 
 There is a lot of data there, and a lot is not so useful. The file isn't readable on the command line so you have to open it with a spreadsheet program and then scroll to find the parts you're interested in.
 
+    ./summary --design mydesign
+
 This summary program prints:
 
 * date of last run
 * name of the design
 * any fields that contain 'violation' or 'error'
 * area in square microns
-
-    ./summary --design mydesign
