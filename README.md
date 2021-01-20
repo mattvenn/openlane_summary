@@ -6,7 +6,7 @@ There is a lot of data there, and a lot is not so useful. The file isn't readabl
 
     ./summary --design mydesign
 
-This summary program prints:
+This summary program prints the following details for the _latest run_:
 
 * date of last run
 * name of the design
