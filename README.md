@@ -12,3 +12,5 @@ This summary program prints:
 * name of the design
 * any fields that contain 'violation' or 'error'
 * area in square microns
+
+You will need the $OPENLANE_ROOT environment variable set to where your OpenLANE directory is.
