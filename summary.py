@@ -15,13 +15,12 @@ import sys
 openlane_designs = os.path.join(os.environ['OPENLANE_ROOT'], 'designs')
 
 def report(design, run):
-    if run == '':
+    if run is None:
         run_dir = os.path.join(openlane_designs, design, 'runs/*')
         list_of_files = glob.glob(run_dir)
         latest_run = max(list_of_files, key=os.path.getctime)
     else:
-        run_dir = os.path.join(openlane_designs, design, 'runs/')
-        latest_run = run_dir + '/' + run
+        latest_run = os.path.join(openlane_designs, design, 'runs', run )
     date = os.path.basename(latest_run)
     print("## %s : DESIGN=%s RUN_DATE=%s" % (design, design, date))
     print()
