@@ -91,7 +91,7 @@ if __name__ == '__main__':
     if not args.top:
         args.top = args.design 
 
-    if not os.environ['OPENLANE_ROOT']:
+    if not 'OPENLANE_ROOT' in os.environ:
         exit("pls set OPENLANE_ROOT to where your OpenLANE is installed")
 
     klayout_def = os.path.join(os.path.dirname(sys.argv[0]), 'klayout_def.xml')
@@ -115,7 +115,7 @@ if __name__ == '__main__':
             openlane_designs = '.'
     else:
         openlane_designs = os.path.join(os.environ['OPENLANE_ROOT'], 'designs')
-    run_dir = os.path.join(openlane_designs, args.design, 'runs/*')
+    run_dir = os.path.join(openlane_designs, args.design, 'runs/*-*')
     list_of_files = glob.glob(run_dir)
     if len(list_of_files) == 0:
         exit("couldn't find that design")
