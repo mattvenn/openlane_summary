@@ -11,6 +11,11 @@ Video demo: https://www.youtube.com/watch?v=2wBbYU_8dZI
 * If you are using a newer version of OpenLANE that uses numbered output files, you will need to add the --numbered argument 
 * Ensure OPENLANE_ROOT and PDK_ROOT are set correctly
 
+# Requirements
+
+* KLayout for most of the views
+* GDS3D for 3D GDS view: https://github.com/trilomix/GDS3D
+
 # Show all skywater cells with KLayout
 
 * This is useful for demonstrations, use the --show-sky130 argument to show all standard cells.
@@ -20,6 +25,7 @@ Video demo: https://www.youtube.com/watch?v=2wBbYU_8dZI
 * Use the --design argument to select the design
 * Optionally use the --run argument to choose a specific run
 * If your top module is called something other than the name of your design, set it with the --top argument
+* If your design is part of Caravel, it uses a different structure for output files, so use the --caravel argument
 
 # Examples
 
@@ -30,3 +36,7 @@ Show drc, violations summary and cell usage of latest run:
 Show PDN of explict run:
 
     summary.py --numbered --design led_blinky --pdn --run 2
+
+Show 3D GDS view of user_project_wrapper part of Caravel:
+
+    summary.py --design user_project_wrapper --caravel --gds-3d
