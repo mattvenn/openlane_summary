@@ -3,6 +3,8 @@
 After the [OpenLANE ASIC flow](https://github.com/efabless/openlane) has finished, you have a lot of files in the run directory.
 This tool allows you to explore the design and get various statistics from the final_report_summary.csv file.
 
+Video demo: https://www.youtube.com/watch?v=2wBbYU_8dZI
+
 # Setup
 
 * Clone the repo somewhere and add the path to your $PATH
