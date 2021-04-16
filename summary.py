@@ -5,6 +5,7 @@ import os
 import glob
 import csv
 import sys
+import re
 from shutil import which
 import datetime
 
@@ -18,8 +19,10 @@ def check_path(path):
 
 def openlane_date_sort(e):
     datestamp = os.path.basename(e)
-    timestamp = datetime.datetime.strptime(datestamp, '%d-%m_%H-%M')
-    return timestamp.timestamp()
+    if re.match(r'^\d+\-\d+\_\d+\-\d+$',datestamp):
+        timestamp = datetime.datetime.strptime(datestamp, '%d-%m_%H-%M')
+        return timestamp.timestamp()
+    return datestamp
 
 def summary_report(summary_file):
     # print short summary of the csv file
@@ -80,7 +83,9 @@ if __name__ == '__main__':
 
     # GDS3D for 3d view
     parser.add_argument('--gds-3d', help='show final GDS in 3D', action='store_const', const=True)
-    
+ 
+    parser.add_argument('--caravel', help='use caravel directory structure instead of standard openlane', action='store_const', const=True)
+   
     args = parser.parse_args()
 
     if not args.top:
@@ -102,7 +107,14 @@ if __name__ == '__main__':
         exit()
 
     # otherwise need to know where openlane and the designs are
-    openlane_designs = os.path.join(os.environ['OPENLANE_ROOT'], 'designs')
+    openlane_designs = ''
+    if args.caravel:
+        if os.path.exists('openlane'):
+            openlane_designs = 'openlane'
+        else:
+            openlane_designs = '.'
+    else:
+        openlane_designs = os.path.join(os.environ['OPENLANE_ROOT'], 'designs')
     run_dir = os.path.join(openlane_designs, args.design, 'runs/*')
     list_of_files = glob.glob(run_dir)
     if len(list_of_files) == 0:
@@ -187,3 +199,4 @@ if __name__ == '__main__':
             exit("pls install GDS3D from https://github.com/trilomix/GDS3D")
         path = check_path(os.path.join(run_path, "results", "magic", args.top + ".gds"))
         os.system("GDS3D -p %s -i %s" % (gds3d_tech, path))
+        
