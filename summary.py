@@ -6,6 +6,7 @@ import glob
 import csv
 import sys
 from shutil import which
+import datetime
 
 def is_tool(name):
     return which(name) is not None
@@ -14,6 +15,11 @@ def check_path(path):
     if not os.path.exists(path):
         exit("file not found: %s" % path)
     return path
+
+def openlane_date_sort(e):
+    datestamp = os.path.basename(e)
+    timestamp = datetime.datetime.strptime(datestamp, '%d-%m_%H-%M')
+    return timestamp.timestamp()
 
 def summary_report(run_path):
     summary_file = os.path.join(run_path, 'reports', 'final_summary_report.csv')
@@ -106,6 +112,7 @@ if __name__ == '__main__':
     openlane_designs = os.path.join(os.environ['OPENLANE_ROOT'], 'designs')
     run_dir = os.path.join(openlane_designs, args.design, 'runs/*')
     list_of_files = glob.glob(run_dir)
+    list_of_files.sort(key=openlane_date_sort)
 
     # what run to show?
     if args.run == -1:
