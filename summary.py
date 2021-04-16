@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 
-# Original version of this script forked from https://github.com/mattvenn/openlane_summary.
-# Produces a simplified summary of all violations from
-# $OPENLANE_ROOT/designs/<design>/runs/<date_time>/reports/final_summary_report.csv
-# Use --run to specify the runs directory. Default is to use cvs from the newest <date_time>.
-
 import argparse
 import os
 import glob
@@ -65,11 +60,11 @@ if __name__ == '__main__':
     # either choose the design and interation
     group.add_argument('--design', help="only run checks on specific design", action='store')
     # or show standard cells
-    group.add_argument('--show-sky-all', help='show all standard cells', action='store_const', const=True)
+    group.add_argument('--show-sky130', help='show all standard cells', action='store_const', const=True)
 
     # optionally choose different name for top module and which run to use (default latest)
     parser.add_argument('--top', help="name of top module if not same as design", action='store')
-    parser.add_argument('--run', help="choose a specific run. If not given use latest. If not arg, show a menu", action='store', default=0, nargs='?', type=int)
+    parser.add_argument('--run', help="choose a specific run. If not given use latest. If not arg, show a menu", action='store', default=-1, nargs='?', type=int)
 
     # what to show
     parser.add_argument('--drc', help='show DRC report', action='store_const', const=True)
@@ -82,10 +77,10 @@ if __name__ == '__main__':
     parser.add_argument('--pdn', help='show PDN', action='store_const', const=True)
     parser.add_argument('--global-placement', help='show global placement PDN', action='store_const', const=True)
     parser.add_argument('--detailed-placement', help='show detailed placement', action='store_const', const=True)
-    parser.add_argument('--final-gds', help='show final GDS', action='store_const', const=True)
+    parser.add_argument('--gds', help='show final GDS', action='store_const', const=True)
 
     # GDS3D for 3d view
-    parser.add_argument('--final-gds-3d', help='show final GDS in 3D', action='store_const', const=True)
+    parser.add_argument('--gds-3d', help='show final GDS in 3D', action='store_const', const=True)
     
     args = parser.parse_args()
 
@@ -100,7 +95,7 @@ if __name__ == '__main__':
     gds3d_tech  = os.path.join(os.path.dirname(sys.argv[0]), 'sky130.txt')
 
     # if showing off the sky130 cells
-    if args.show_sky_all:
+    if args.show_sky130:
         if not os.environ['PDK_ROOT']:
             exit("pls set PDK_ROOT to where your PDK is installed")
         path = check_path(os.path.join(os.environ['PDK_ROOT'], "sky130A", "libs.ref", "sky130_fd_sc_hd", "gds", "sky130_fd_sc_hd.gds"))
@@ -113,25 +108,18 @@ if __name__ == '__main__':
     list_of_files = glob.glob(run_dir)
 
     # what run to show?
-    if args.run == 0:
-        # use the latest
+    if args.run == -1:
+        # default is to use the latest
         print("using latest run:")
         run_path = max(list_of_files, key=os.path.getctime)
 
     elif args.run is None:
         # UI for asking for which run to use
-        run_index = 0
-        for run in list_of_files:
-            print("%2d: %s" % (run_index, os.path.basename(run)), end='')
-            if(run_index == len(list_of_files)-1):
-                print(" <default>")
-            else:
-                print()
-            run_index += 1
+        for run_index, run in enumerate(list_of_files):
+            print("\n%2d: %s" % (run_index, os.path.basename(run)), end='')
+        print(" <default>\n")
         
-        n = input("which run? <enter for default>: ")
-        if n == '':
-            n = len(list_of_files)-1 
+        n = input("which run? <enter for default>: ") or run_index
         run_path = list_of_files[int(n)]
 
     else:
@@ -169,11 +157,11 @@ if __name__ == '__main__':
         path = check_path(os.path.join(run_path, "results", "placement", args.top + ".placement.def"))
         os.system("klayout -l %s %s" % (klayout_def, path))
 
-    if args.final_gds:
+    if args.gds:
         path = check_path(os.path.join(run_path, "results", "magic", args.top + ".gds"))
         os.system("klayout -l %s %s" % (klayout_gds, path))
 
-    if args.final_gds_3d:
+    if args.gds_3d:
         if not is_tool('GDS3D'):
             exit("pls install GDS3D from https://github.com/trilomix/GDS3D")
         path = check_path(os.path.join(run_path, "results", "magic", args.top + ".gds"))
