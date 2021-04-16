@@ -21,43 +21,35 @@ def openlane_date_sort(e):
     timestamp = datetime.datetime.strptime(datestamp, '%d-%m_%H-%M')
     return timestamp.timestamp()
 
-def summary_report(run_path):
-    summary_file = os.path.join(run_path, 'reports', 'final_summary_report.csv')
-
-    # print pertinent summary - only interested in errors atm
-    try:
-        with open(summary_file) as fh:
-            summary = csv.DictReader(fh)
-            for row in summary:
-                for key, value in row.items():
-                    if "violation" in key or "error" in key:
-                        print("%30s : %20s" % (key, value))
-                    if "AREA" in key:
-                        area = float(value)
-                    if "flow_status" in key:
-                        status = value
-    except FileNotFoundError as e:
-        exit("summary file not found - did the run fail?")
+def summary_report(summary_file):
+    # print short summary of the csv file
+    status = None
+    with open(summary_file) as fh:
+        summary = csv.DictReader(fh)
+        for row in summary:
+            for key, value in row.items():
+                if "violation" in key or "error" in key:
+                    print("%30s : %20s" % (key, value))
+                if "AREA" in key:
+                    area = float(value)
+                if "flow_status" in key:
+                    status = value
 
     print("area %d um^2" % (1e6 * area))
-    print("flow status: %s" % status)
+    if status is not None: # newer OpenLANE has status, older ones don't
+        print("flow status: %s" % status)
 
-def drc_report(run_path):
-    # what drc is broken?
-    drc_file = os.path.join(run_path, 'logs', 'magic', 'magic.drc')
+def drc_report(drc_file):
     last_drc = None
     drc_count = 0
-    try:
-        with open(drc_file) as drc:
-            for line in drc.readlines():
-                drc_count += 1
-                if '(' in line:
-                    if last_drc is not None:
-                        print("* %s (%d)" % (last_drc, drc_count/4))
-                    last_drc = line.strip()
-                    drc_count = 0
-    except FileNotFoundError as e:
-        print("no DRC file found")
+    with open(drc_file) as drc:
+        for line in drc.readlines():
+            drc_count += 1
+            if '(' in line:
+                if last_drc is not None:
+                    print("* %s (%d)" % (last_drc, drc_count/4))
+                last_drc = line.strip()
+                drc_count = 0
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="OpenLANE summary tool")
@@ -71,10 +63,11 @@ if __name__ == '__main__':
     # optionally choose different name for top module and which run to use (default latest)
     parser.add_argument('--top', help="name of top module if not same as design", action='store')
     parser.add_argument('--run', help="choose a specific run. If not given use latest. If not arg, show a menu", action='store', default=-1, nargs='?', type=int)
+    parser.add_argument('--numbered', help="newer versions of OpenLANE number the output files", action='store_const', const=True)
 
     # what to show
     parser.add_argument('--drc', help='show DRC report', action='store_const', const=True)
-    parser.add_argument('--violations', help='show violations summary report', action='store_const', const=True)
+    parser.add_argument('--summary', help='show violations, area & status from summary report', action='store_const', const=True)
     parser.add_argument('--synth', help='show post techmap synth', action='store_const', const=True)
     parser.add_argument('--yosys-report', help='show cell usage after yosys synth', action='store_const', const=True)
 
@@ -136,28 +129,44 @@ if __name__ == '__main__':
 
     print(run_path)
 
-    if args.violations:
-        summary_report(run_path)
+    if args.summary:
+        path = check_path(os.path.join(run_path, 'reports', 'final_summary_report.csv'))
+        summary_report(path)
 
     if args.drc:
-        drc_report(run_path)
+        path = check_path(os.path.join(run_path, 'logs', 'magic', 'magic.drc'))
+        drc_report(path)
 
     if args.synth:
-        os.system("xdot %s" % os.path.join(run_path, "tmp", "synthesis", "post_techmap.dot"))
+        path = check_path(os.path.join(run_path, "tmp", "synthesis", "post_techmap.dot"))
+        os.system("xdot %s" % path)
 
     if args.yosys_report:
-        os.system("cat %s" % os.path.join(run_path, "reports", "synthesis", "1-yosys_4.stat.rpt"))
+        if args.numbered:
+            filename = "1-yosys_4.stat.rpt"
+        else:
+            filename = "yosys_2.stat.rpt"
+        path = check_path(os.path.join(run_path, "reports", "synthesis", filename))
+        os.system("cat %s" % path)
 
     if args.floorplan:
-        path = os.path.join(run_path, "results", "floorplan", args.top + ".floorplan.def")
+        path = check_path(os.path.join(run_path, "results", "floorplan", args.top + ".floorplan.def"))
         os.system("klayout -l %s %s" % (klayout_def, path))
 
     if args.pdn:
-        path = check_path(os.path.join(run_path, "tmp", "floorplan", "7-pdn.def"))
+        if args.numbered:
+            filename = "7-pdn.def"
+        else:
+            filename = "pdn.def"
+        path = check_path(os.path.join(run_path, "tmp", "floorplan", filename))
         os.system("klayout -l %s %s" % (klayout_def, path))
 
     if args.global_placement:
-        path = check_path(os.path.join(run_path, "tmp", "placement", "8-replace.def"))
+        if args.numbered:
+            filename = "8-replace.def"
+        else:
+            filename = "replace.def"
+        path = check_path(os.path.join(run_path, "tmp", "placement", filename))
         os.system("klayout -l %s %s" % (klayout_def, path))
 
     if args.detailed_placement:
