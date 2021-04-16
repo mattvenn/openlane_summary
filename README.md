@@ -1,16 +1,30 @@
 # OpenLANE summary
 
-After the [OpenLANE ASIC flow](https://github.com/efabless/openlane) has finished, you will have a useful final_report_summary.csv file.
+After the [OpenLANE ASIC flow](https://github.com/efabless/openlane) has finished, you have a lot of files in the run directory.
+This tool allows you to explore the design and get various statistics from the final_report_summary.csv file.
 
-There is a lot of data there, and a lot is not so useful. The file isn't readable on the command line so you have to open it with a spreadsheet program and then scroll to find the parts you're interested in.
+# Setup
 
-    ./summary --design mydesign
+* Clone the repo somewhere and add the path to your $PATH
+* If you are using a newer version of OpenLANE that uses numbered output files, you will need to add the --numbered argument 
+* Ensure OPENLANE_ROOT and PDK_ROOT are set correctly
 
-This summary program prints the following details for the _latest run_:
+# Show all skywater cells with KLayout
 
-* date of last run
-* name of the design
-* any fields that contain 'violation' or 'error'
-* area in square microns
+* This is useful for demonstrations, use the --show-sky130 argument to show all standard cells.
 
-You will need the $OPENLANE_ROOT environment variable set to where your OpenLANE directory is.
+# Show stats and explore a specific design/run
+
+* Use the --design argument to select the design
+* Optionally use the --run argument to choose a specific run
+* If your top module is called something other than the name of your design, set it with the --top argument
+
+# Examples
+
+Show drc, violations summary and cell usage of latest run:
+
+    summary.py --numbered --design led_blinky --drc --summary --yosys
+
+Show PDN of explict run:
+
+    summary.py --numbered --design led_blinky --pdn --run 2
