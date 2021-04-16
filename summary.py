@@ -20,9 +20,8 @@ def check_path(path):
         exit("file not found: %s" % path)
     return path
 
-def summary_report(latest_run):
-
-    summary_file = os.path.join(latest_run, 'reports', 'final_summary_report.csv')
+def summary_report(run_path):
+    summary_file = os.path.join(run_path, 'reports', 'final_summary_report.csv')
 
     # print pertinent summary - only interested in errors atm
     try:
@@ -34,14 +33,17 @@ def summary_report(latest_run):
                         print("%30s : %20s" % (key, value))
                     if "AREA" in key:
                         area = float(value)
+                    if "flow_status" in key:
+                        status = value
     except FileNotFoundError as e:
         exit("summary file not found - did the run fail?")
 
     print("area %d um^2" % (1e6 * area))
+    print("flow status: %s" % status)
 
-def drc_report(latest_run):
+def drc_report(run_path):
     # what drc is broken?
-    drc_file = os.path.join(latest_run, 'logs', 'magic', 'magic.drc')
+    drc_file = os.path.join(run_path, 'logs', 'magic', 'magic.drc')
     last_drc = None
     drc_count = 0
     try:
@@ -58,8 +60,14 @@ def drc_report(latest_run):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="OpenLANE summary tool")
-    # choose the design and interation
-    parser.add_argument('--design', help="only run checks on specific design", action='store', required=True)
+    group = parser.add_mutually_exclusive_group(required=True)
+
+    # either choose the design and interation
+    group.add_argument('--design', help="only run checks on specific design", action='store')
+    # or show standard cells
+    group.add_argument('--show-sky-all', help='show all standard cells', action='store_const', const=True)
+
+    # optionally choose different name for top module and which run to use (default latest)
     parser.add_argument('--top', help="name of top module if not same as design", action='store')
     parser.add_argument('--run', help="choose a specific run. If not given use latest. If not arg, show a menu", action='store', default=0, nargs='?', type=int)
 
@@ -78,17 +86,28 @@ if __name__ == '__main__':
 
     # GDS3D for 3d view
     parser.add_argument('--final-gds-3d', help='show final GDS in 3D', action='store_const', const=True)
-  
-    # show all standard cells
-    parser.add_argument('--show-sky-all', help='show all standard cells', action='store_const', const=True)
     
     args = parser.parse_args()
+
     if not args.top:
         args.top = args.design 
 
     if not os.environ['OPENLANE_ROOT']:
         exit("pls set OPENLANE_ROOT to where your OpenLANE is installed")
 
+    klayout_def = os.path.join(os.path.dirname(sys.argv[0]), 'klayout_def.xml')
+    klayout_gds = os.path.join(os.path.dirname(sys.argv[0]), 'klayout_gds.xml')
+    gds3d_tech  = os.path.join(os.path.dirname(sys.argv[0]), 'sky130.txt')
+
+    # if showing off the sky130 cells
+    if args.show_sky_all:
+        if not os.environ['PDK_ROOT']:
+            exit("pls set PDK_ROOT to where your PDK is installed")
+        path = check_path(os.path.join(os.environ['PDK_ROOT'], "sky130A", "libs.ref", "sky130_fd_sc_hd", "gds", "sky130_fd_sc_hd.gds"))
+        os.system("klayout -l %s %s" % (klayout_gds, path))
+        exit()
+
+    # otherwise need to know where openlane and the designs are
     openlane_designs = os.path.join(os.environ['OPENLANE_ROOT'], 'designs')
     run_dir = os.path.join(openlane_designs, args.design, 'runs/*')
     list_of_files = glob.glob(run_dir)
@@ -97,7 +116,7 @@ if __name__ == '__main__':
     if args.run == 0:
         # use the latest
         print("using latest run:")
-        latest_run = max(list_of_files, key=os.path.getctime)
+        run_path = max(list_of_files, key=os.path.getctime)
 
     elif args.run is None:
         # UI for asking for which run to use
@@ -113,56 +132,49 @@ if __name__ == '__main__':
         n = input("which run? <enter for default>: ")
         if n == '':
             n = len(list_of_files)-1 
-        latest_run = list_of_files[int(n)]
+        run_path = list_of_files[int(n)]
 
     else:
         # use the given run
         print("using run %d:" % args.run)
-        latest_run = list_of_files[args.run]
+        run_path = list_of_files[args.run]
 
-    print(latest_run)
+    print(run_path)
 
     if args.violations:
-        summary_report(latest_run)
+        summary_report(run_path)
 
     if args.drc:
-        drc_report(latest_run)
+        drc_report(run_path)
 
     if args.synth:
-        os.system("xdot %s" % os.path.join(latest_run, "tmp", "synthesis", "post_techmap.dot"))
+        os.system("xdot %s" % os.path.join(run_path, "tmp", "synthesis", "post_techmap.dot"))
 
     if args.yosys_report:
-        os.system("cat %s" % os.path.join(latest_run, "reports", "synthesis", "1-yosys_4.stat.rpt"))
+        os.system("cat %s" % os.path.join(run_path, "reports", "synthesis", "1-yosys_4.stat.rpt"))
 
     if args.floorplan:
-        path = os.path.join(latest_run, "results", "floorplan", args.top + ".floorplan.def")
-        os.system("klayout -l klayout_def.xml %s" % path)
+        path = os.path.join(run_path, "results", "floorplan", args.top + ".floorplan.def")
+        os.system("klayout -l %s %s" % (klayout_def, path))
 
     if args.pdn:
-        path = check_path(os.path.join(latest_run, "tmp", "floorplan", "7-pdn.def"))
-        os.system("klayout -l klayout_def.xml %s" % path)
+        path = check_path(os.path.join(run_path, "tmp", "floorplan", "7-pdn.def"))
+        os.system("klayout -l %s %s" % (klayout_def, path))
 
     if args.global_placement:
-        path = check_path(os.path.join(latest_run, "tmp", "placement", "8-replace.def"))
-        os.system("klayout -l klayout_def.xml %s" % path)
+        path = check_path(os.path.join(run_path, "tmp", "placement", "8-replace.def"))
+        os.system("klayout -l %s %s" % (klayout_def, path))
 
     if args.detailed_placement:
-        path = check_path(os.path.join(latest_run, "results", "placement", args.top + ".placement.def"))
-        os.system("klayout -l klayout_def.xml %s" % path)
+        path = check_path(os.path.join(run_path, "results", "placement", args.top + ".placement.def"))
+        os.system("klayout -l %s %s" % (klayout_def, path))
 
     if args.final_gds:
-        path = check_path(os.path.join(latest_run, "results", "magic", args.top + ".gds"))
-        os.system("klayout -l klayout_gds.xml %s" % path)
+        path = check_path(os.path.join(run_path, "results", "magic", args.top + ".gds"))
+        os.system("klayout -l %s %s" % (klayout_gds, path))
 
     if args.final_gds_3d:
         if not is_tool('GDS3D'):
             exit("pls install GDS3D from https://github.com/trilomix/GDS3D")
-        path = check_path(os.path.join(latest_run, "results", "magic", args.top + ".gds"))
-        os.system("GDS3D -p sky130.txt -i %s" % path)
-
-    if args.show_sky_all:
-        if not os.environ['PDK_ROOT']:
-            exit("pls set PDK_ROOT to where your PDK is installed")
-        path = check_path(os.path.join(os.environ['PDK_ROOT'], "sky130A", "libs.ref", "sky130_fd_sc_hd", "gds", "sky130_fd_sc_hd.gds"))
-        os.system("klayout -l klayout_gds.xml %s" % path)
-
+        path = check_path(os.path.join(run_path, "results", "magic", args.top + ".gds"))
+        os.system("GDS3D -p %s -i %s" % (gds3d_tech, path))
