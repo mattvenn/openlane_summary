@@ -105,6 +105,8 @@ if __name__ == '__main__':
     openlane_designs = os.path.join(os.environ['OPENLANE_ROOT'], 'designs')
     run_dir = os.path.join(openlane_designs, args.design, 'runs/*')
     list_of_files = glob.glob(run_dir)
+    if len(list_of_files) == 0:
+        exit("couldn't find that design")
     list_of_files.sort(key=openlane_date_sort)
 
     # what run to show?
@@ -134,11 +136,14 @@ if __name__ == '__main__':
         summary_report(path)
 
     if args.drc:
-        path = check_path(os.path.join(run_path, 'logs', 'magic', 'magic.drc'))
-        drc_report(path)
+        path = os.path.join(run_path, 'logs', 'magic', 'magic.drc') # don't check path because if DRC is clean, don't get the file
+        if os.path.exists(path):
+            drc_report(path)
+        else:
+            print("no DRC file, DRC clean?")
 
     if args.synth:
-        path = check_path(os.path.join(run_path, "tmp", "synthesis", "post_techmap.dot"))
+        path = check_path(os.path.join(run_path, "tmp", "synthesis", "post_techmap.dot")) # post_techmap is created by https://github.com/efabless/openlane/pull/282
         os.system("xdot %s" % path)
 
     if args.yosys_report:
