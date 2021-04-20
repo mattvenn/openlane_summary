@@ -43,7 +43,6 @@ def summary_report(summary_file):
     if status is not None: # newer OpenLANE has status, older ones don't
         print("flow status: %s" % status)
 
-
 def full_summary_report(summary_file):
     # print short summary of the csv file
     with open(summary_file) as fh:
@@ -162,7 +161,6 @@ if __name__ == '__main__':
         path = check_path(os.path.join(run_path, 'reports', 'final_summary_report.csv'))
         full_summary_report(path)
 
-    
     if args.drc:
         path = os.path.join(run_path, 'logs', 'magic', 'magic.drc') # don't check path because if DRC is clean, don't get the file
         if os.path.exists(path):
@@ -214,6 +212,5 @@ if __name__ == '__main__':
         if not is_tool('GDS3D'):
             exit("pls install GDS3D from https://github.com/trilomix/GDS3D")
         path = check_path(os.path.join(run_path, "results", "magic", args.top + ".gds"))
-        print("GDS3D -p %s -i %s" % (gds3d_tech, path))
         os.system("GDS3D -p %s -i %s" % (gds3d_tech, path))
         
