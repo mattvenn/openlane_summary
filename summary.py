@@ -36,8 +36,7 @@ def summary_report(summary_file):
                 if "AREA" in key:
                     area = float(value)
                 if "flow_status" in key:
-                    status = value
-                
+                    status = value           
 
     print("area %d um^2" % (1e6 * area))
     if status is not None: # newer OpenLANE has status, older ones don't
