@@ -40,12 +40,20 @@ def summary_report(summary_file):
                 if "AREA" in key:
                     area = float(value)
                 if "flow_status" in key:
-                    status = value
+                    status = value           
 
     print("area %d um^2" % (1e6 * area))
     if status is not None: # newer OpenLANE has status, older ones don't
         print("flow status: %s" % status)
 
+def full_summary_report(summary_file):
+    # print short summary of the csv file
+    with open(summary_file) as fh:
+        summary = csv.DictReader(fh)
+        for row in summary:
+            for key, value in row.items():
+                print("%30s : %20s" % (key, value))
+                    
 def drc_report(drc_file):
     last_drc = None
     drc_count = 0
@@ -74,6 +82,7 @@ if __name__ == '__main__':
     # what to show
     parser.add_argument('--drc', help='show DRC report', action='store_const', const=True)
     parser.add_argument('--summary', help='show violations, area & status from summary report', action='store_const', const=True)
+    parser.add_argument('--full-summary', help='show the full summary report csv file', action='store_const', const=True)
     parser.add_argument('--synth', help='show post techmap synth', action='store_const', const=True)
     parser.add_argument('--yosys-report', help='show cell usage after yosys synth', action='store_const', const=True)
 
@@ -149,6 +158,10 @@ if __name__ == '__main__':
     if args.summary:
         path = check_path(os.path.join(run_path, 'reports', 'final_summary_report.csv'))
         summary_report(path)
+
+    if args.full_summary:
+        path = check_path(os.path.join(run_path, 'reports', 'final_summary_report.csv'))
+        full_summary_report(path)
 
     if args.drc:
         path = os.path.join(run_path, 'logs', 'magic', 'magic.drc') # don't check path because if DRC is clean, don't get the file
