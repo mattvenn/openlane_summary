@@ -125,9 +125,11 @@ if __name__ == '__main__':
             openlane_designs = 'openlane'
         else:
             openlane_designs = '.'
+        run_dir = os.path.join(openlane_designs, args.design, 'runs/*')
     else:
         openlane_designs = os.path.join(os.environ['OPENLANE_ROOT'], 'designs')
-    run_dir = os.path.join(openlane_designs, args.design, 'runs/*-*')
+        run_dir = os.path.join(openlane_designs, args.design, 'runs/*-*')
+
     list_of_files = glob.glob(run_dir)
     if len(list_of_files) == 0:
         exit("couldn't find that design")
