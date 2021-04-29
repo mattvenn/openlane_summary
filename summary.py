@@ -13,9 +13,13 @@ def is_tool(name):
     return which(name) is not None
 
 def check_path(path):
-    if not os.path.exists(path):
+    paths = glob.glob(path)
+    if len(paths) == 0:
         exit("file not found: %s" % path)
-    return path
+    if len(paths) > 1:
+        print("warning: glob pattern found too many files, using first one: %s" % paths[0])
+    
+    return paths[0]
 
 def openlane_date_sort(e):
     datestamp = os.path.basename(e)
@@ -66,7 +70,6 @@ if __name__ == '__main__':
     # optionally choose different name for top module and which run to use (default latest)
     parser.add_argument('--top', help="name of top module if not same as design", action='store')
     parser.add_argument('--run', help="choose a specific run. If not given use latest. If not arg, show a menu", action='store', default=-1, nargs='?', type=int)
-    parser.add_argument('--numbered', help="newer versions of OpenLANE number the output files", action='store_const', const=True)
 
     # what to show
     parser.add_argument('--drc', help='show DRC report', action='store_const', const=True)
@@ -159,10 +162,7 @@ if __name__ == '__main__':
         os.system("xdot %s" % path)
 
     if args.yosys_report:
-        if args.numbered:
-            filename = "1-yosys_4.stat.rpt"
-        else:
-            filename = "yosys_2.stat.rpt"
+        filename = "*yosys_*.stat.rpt"
         path = check_path(os.path.join(run_path, "reports", "synthesis", filename))
         os.system("cat %s" % path)
 
@@ -171,18 +171,12 @@ if __name__ == '__main__':
         os.system("klayout -l %s %s" % (klayout_def, path))
 
     if args.pdn:
-        if args.numbered:
-            filename = "7-pdn.def"
-        else:
-            filename = "pdn.def"
+        filename = "*pdn.def"
         path = check_path(os.path.join(run_path, "tmp", "floorplan", filename))
         os.system("klayout -l %s %s" % (klayout_def, path))
 
     if args.global_placement:
-        if args.numbered:
-            filename = "8-replace.def"
-        else:
-            filename = "replace.def"
+        filename = "*replace.def"
         path = check_path(os.path.join(run_path, "tmp", "placement", filename))
         os.system("klayout -l %s %s" % (klayout_def, path))
 
