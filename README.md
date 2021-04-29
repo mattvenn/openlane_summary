@@ -8,7 +8,6 @@ Video demo: https://www.youtube.com/watch?v=2wBbYU_8dZI
 # Setup
 
 * Clone the repo somewhere and add the path to your $PATH
-* If you are using a newer version of OpenLANE that uses numbered output files, you will need to add the --numbered argument 
 * Ensure OPENLANE_ROOT and PDK_ROOT are set correctly
 
 # Requirements
@@ -31,11 +30,11 @@ Video demo: https://www.youtube.com/watch?v=2wBbYU_8dZI
 
 Show drc, violations summary and cell usage of latest run:
 
-    summary.py --numbered --design led_blinky --drc --summary --yosys
+    summary.py --design led_blinky --drc --summary --yosys
 
 Show PDN of explict run:
 
-    summary.py --numbered --design led_blinky --pdn --run 2
+    summary.py --design led_blinky --pdn --run 2
 
 Show 3D GDS view of user_project_wrapper part of Caravel:
 
