@@ -177,7 +177,7 @@ if __name__ == '__main__':
         os.system("xdot %s" % path)
 
     if args.yosys_report:
-        filename = "*yosys_*.stat.rpt"
+        filename = "*yosys*.stat.rpt"
         path = check_path(os.path.join(run_path, "reports", "synthesis", filename))
         os.system("cat %s" % path)
 
