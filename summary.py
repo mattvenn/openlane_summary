@@ -66,6 +66,29 @@ def drc_report(drc_file):
                 last_drc = line.strip()
                 drc_count = 0
 
+
+def check_and_sort_regressions(regressions):
+    summaries = {}
+    for run_path in regressions:
+        summary_file = os.path.join(run_path, "reports", "final_summary_report.csv")
+        if not os.path.exists(summary_file):
+            # print(f"run {os.path.basename(run_path)} summary file not found")
+            continue
+        with open(summary_file) as fh:
+            summary = next(csv.DictReader(fh))
+        if summary['flow_status'] != 'Flow_completed':
+            # print(f"run {os.path.basename(run_path)} did not complete : {summary['flow_status']}")
+            continue
+        summaries[run_path] = summary
+    violations = {rp: sum(int(v) for k, v in summary.items() if ('violations' in k or 'error' in k) and int(v) >= 0) for rp, summary in summaries.items()}
+    for rp, n in violations.items():
+        print(f"found regression run {os.path.basename(rp)} with {n} violations")
+    return sorted(
+        violations,
+        key=lambda rp: violations[rp]
+        )
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="OpenLANE summary tool")
     group = parser.add_mutually_exclusive_group(required=True)
@@ -75,6 +98,7 @@ if __name__ == '__main__':
     # or show standard cells
     group.add_argument('--show-sky130', help='show all standard cells', action='store_const', const=True)
 
+    parser.add_argument('--regression', help="look for a regression test output dir", action='store_const', const=True)
     # optionally choose different name for top module and which run to use (default latest)
     parser.add_argument('--top', help="name of top module if not same as design", action='store')
     parser.add_argument('--run', help="choose a specific run. If not given use latest. If not arg, show a menu", action='store', default=-1, nargs='?', type=int)
@@ -128,32 +152,40 @@ if __name__ == '__main__':
         run_dir = os.path.join(openlane_designs, args.design, 'runs/*')
     else:
         openlane_designs = os.path.join(os.environ['OPENLANE_ROOT'], 'designs')
-        run_dir = os.path.join(openlane_designs, args.design, 'runs/*-*')
+        run_dir = os.path.join(openlane_designs, args.design, 'runs')
+
+    run_dir = os.path.join(run_dir, 'config_regression_*' if args.regression else '*-*')
 
     list_of_files = glob.glob(run_dir)
     if len(list_of_files) == 0:
         exit("couldn't find that design")
-    list_of_files.sort(key=openlane_date_sort)
-
-    # what run to show?
-    if args.run == -1:
-        # default is to use the latest
-        print("using latest run:")
-        run_path = max(list_of_files, key=os.path.getctime)
-
-    elif args.run is None:
-        # UI for asking for which run to use
-        for run_index, run in enumerate(list_of_files):
-            print("\n%2d: %s" % (run_index, os.path.basename(run)), end='')
-        print(" <default>\n")
-        
-        n = input("which run? <enter for default>: ") or run_index
-        run_path = list_of_files[int(n)]
-
+    if args.regression:
+        print(f"found {len(list_of_files)} regression variants, sorting by number of violations")
+        list_of_files = check_and_sort_regressions(list_of_files)
+        if len(list_of_files) == 0:
+            exit("no successful regression runs found")
+        run_path = list_of_files[0]
     else:
-        # use the given run
-        print("using run %d:" % args.run)
-        run_path = list_of_files[args.run]
+        list_of_files.sort(key=openlane_date_sort)
+        # what run to show?
+        if args.run == -1:
+            # default is to use the latest
+            print("using latest run:")
+            run_path = max(list_of_files, key=os.path.getctime)
+
+        elif args.run is None:
+            # UI for asking for which run to use
+            for run_index, run in enumerate(list_of_files):
+                print("\n%2d: %s" % (run_index, os.path.basename(run)), end='')
+            print(" <default>\n")
+
+            n = input("which run? <enter for default>: ") or run_index
+            run_path = list_of_files[int(n)]
+
+        else:
+            # use the given run
+            print("using run %d:" % args.run)
+            run_path = list_of_files[args.run]
 
     print(run_path)
 
