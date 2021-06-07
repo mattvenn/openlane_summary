@@ -6,7 +6,7 @@ import glob
 import csv
 import sys
 import re
-from shutil import which
+from shutil import which, copyfile
 import datetime
 
 def is_tool(name):
@@ -114,7 +114,10 @@ if __name__ == '__main__':
     # or show standard cells
     group.add_argument('--show-sky130', help='show all standard cells', action='store_const', const=True)
 
+    # arguments for caravel or regression context
     parser.add_argument('--regression', help="look for a regression test output dir", action='store_const', const=True)
+    parser.add_argument('--caravel', help='use caravel directory structure instead of standard openlane', action='store_const', const=True)
+
     # optionally choose different name for top module and which run to use (default latest)
     parser.add_argument('--top', help="name of top module if not same as design", action='store')
     parser.add_argument('--run', help="choose a specific run. If not given use latest. If not arg, show a menu", action='store', default=-1, nargs='?', type=int)
@@ -127,6 +130,8 @@ if __name__ == '__main__':
     parser.add_argument('--yosys-report', help='show cell usage after yosys synth', action='store_const', const=True)
     parser.add_argument('--antenna', help='find and list any antenna violations', action='store_const', const=True)
 
+    # some useful things to do
+    parser.add_argument('--copy-gds', help='copy gds, lef and powered verilog to the current working directory', action='store_const', const=True)
 
     # klayout for intermediate files
     parser.add_argument('--floorplan', help='show floorplan', action='store_const', const=True)
@@ -138,7 +143,6 @@ if __name__ == '__main__':
     # GDS3D for 3d view
     parser.add_argument('--gds-3d', help='show final GDS in 3D', action='store_const', const=True)
  
-    parser.add_argument('--caravel', help='use caravel directory structure instead of standard openlane', action='store_const', const=True)
    
     args = parser.parse_args()
 
@@ -260,6 +264,14 @@ if __name__ == '__main__':
     if args.gds:
         path = check_path(os.path.join(run_path, "results", "magic", args.top + ".gds"))
         os.system("klayout -l %s %s" % (klayout_gds, path))
+
+    if args.copy_gds:
+        path = check_path(os.path.join(run_path, "results", "magic", args.top + ".gds"))
+        copyfile(path, args.top + ".gds")
+        path = check_path(os.path.join(run_path, "results", "magic", args.top + ".lef"))
+        copyfile(path, args.top + ".lef")
+        path = check_path(os.path.join(run_path, "results", "lvs", args.top + ".lvs.powered.v"))
+        copyfile(path, args.top + ".lvs.powered.v")
 
     if args.gds_3d:
         if not is_tool('GDS3D'):
