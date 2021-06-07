@@ -66,6 +66,22 @@ def drc_report(drc_file):
                 last_drc = line.strip()
                 drc_count = 0
 
+def antenna_report(antenna_report):
+    violations = 0
+    with open(antenna_report) as ant:
+        for line in ant.readlines():
+            m = re.match(r'\s+(PAR|CAR):\s+(\d+.\d+)\*\s+Ratio:\s+(\d+.\d+)', line)
+            if m is not None:
+                violations += 1
+                violation = float(m.group(2))
+                ratio = float(m.group(3))
+                if violation > (ratio * 2):
+                    print(line.strip(), ": worth fixing")
+                else:
+                    print(line.strip(), ": can ignore")
+
+    if violations > 0:
+        print("for more info on antenna reports see https://www.zerotoasiccourse.com/terminology/antenna-report/")
 
 def check_and_sort_regressions(regressions):
     summaries = {}
@@ -109,6 +125,8 @@ if __name__ == '__main__':
     parser.add_argument('--full-summary', help='show the full summary report csv file', action='store_const', const=True)
     parser.add_argument('--synth', help='show post techmap synth', action='store_const', const=True)
     parser.add_argument('--yosys-report', help='show cell usage after yosys synth', action='store_const', const=True)
+    parser.add_argument('--antenna', help='find and list any antenna violations', action='store_const', const=True)
+
 
     # klayout for intermediate files
     parser.add_argument('--floorplan', help='show floorplan', action='store_const', const=True)
@@ -212,6 +230,14 @@ if __name__ == '__main__':
         filename = "*yosys*.stat.rpt"
         path = check_path(os.path.join(run_path, "reports", "synthesis", filename))
         os.system("cat %s" % path)
+
+    if args.antenna:
+        filename = "*antenna.rpt"
+        path = check_path(os.path.join(run_path, "reports", "routing", filename))
+        if os.path.exists(path):
+            antenna_report(path)
+        else:
+            print("no antenna file, did the run finish?")
 
     if args.floorplan:
         path = check_path(os.path.join(run_path, "results", "floorplan", args.top + ".floorplan.def"))
