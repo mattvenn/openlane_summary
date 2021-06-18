@@ -172,11 +172,15 @@ if __name__ == '__main__':
         else:
             openlane_designs = '.'
         run_dir = os.path.join(openlane_designs, args.design, 'runs/*')
+
     else:
         openlane_designs = os.path.join(os.environ['OPENLANE_ROOT'], 'designs')
-        run_dir = os.path.join(openlane_designs, args.design, 'runs')
+        if args.regression:
+            run_dir = os.path.join(openlane_designs, args.design, 'config_regression_*')
+        else:
+            run_dir = os.path.join(openlane_designs, args.design, 'runs', '*-*')
 
-    run_dir = os.path.join(run_dir, 'config_regression_*' if args.regression else '*-*')
+    print(run_dir)
 
     list_of_files = glob.glob(run_dir)
     if len(list_of_files) == 0:
