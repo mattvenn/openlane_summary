@@ -5,6 +5,8 @@ This tool allows you to explore the design and get various statistics from the f
 
 Video demo: https://www.youtube.com/watch?v=2wBbYU_8dZI
 
+Article: https://www.zerotoasiccourse.com/post/openlane_output_files/
+
 # Setup
 
 * Clone the repo somewhere and add the path to your $PATH
