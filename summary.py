@@ -23,9 +23,15 @@ def check_path(path):
 
 def openlane_date_sort(e):
     datestamp = os.path.basename(e)
-    if re.match(r'^\d+\-\d+\_\d+\-\d+$',datestamp):
-        timestamp = datetime.datetime.strptime(datestamp, '%d-%m_%H-%M')
+    if re.match(r'^RUN_\d+.\d+.\d+\_\d+\.\d+\.\d+$',datestamp):
+        datestamp = datestamp.replace('RUN_', '')
+        timestamp = datetime.datetime.strptime(datestamp, '%Y.%m.%d_%H.%M.%S')
         return timestamp.timestamp()
+
+    elif re.match(r'^\d+\-\d+\_\d+\-\d+$',datestamp):
+            timestamp = datetime.datetime.strptime(datestamp, '%d-%m_%H-%M')
+            return timestamp.timestamp()
+
     return datestamp
 
 def summary_report(summary_file):
@@ -178,7 +184,7 @@ if __name__ == '__main__':
         if args.regression:
             run_dir = os.path.join(openlane_designs, args.design, 'config_regression_*')
         else:
-            run_dir = os.path.join(openlane_designs, args.design, 'runs', '*-*')
+            run_dir = os.path.join(openlane_designs, args.design, 'runs', '*')
 
     print(run_dir)
 
