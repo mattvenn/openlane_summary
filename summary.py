@@ -32,7 +32,7 @@ def openlane_date_sort(e):
             timestamp = datetime.datetime.strptime(datestamp, '%d-%m_%H-%M')
             return timestamp.timestamp()
 
-    return datestamp
+    return -1
 
 def summary_report(summary_file):
     # print short summary of the csv file
