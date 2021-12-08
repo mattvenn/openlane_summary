@@ -282,6 +282,15 @@ if __name__ == '__main__':
         copyfile(path, args.top + ".lef")
         path = check_path(os.path.join(run_path, "results", "lvs", args.top + ".lvs.powered.v"))
         copyfile(path, args.top + ".lvs.powered.v")
+        # def more complicated
+        path = check_path(os.path.join(run_path, "results", "routing", "*" + args.top + ".def"))
+        path = glob.glob(path)[0]
+        copyfile(path, args.top + ".def")
+        # also take the pdk and openlane versions
+        path = check_path(os.path.join(run_path, "OPENLANE_VERSION"))
+        copyfile(path, "OPENLANE_VERSION")
+        path = check_path(os.path.join(run_path, "PDK_SOURCES"))
+        copyfile(path, "PDK_SOURCES")
 
     if args.gds_3d:
         if not is_tool('GDS3D'):
