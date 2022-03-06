@@ -241,20 +241,20 @@ if __name__ == '__main__':
         os.system("xdot %s" % path)
 
     if args.yosys_report:
-        filename = "*yosys*.stat.rpt"
+        filename = "*synthesis*.stat.*"
         path = check_path(os.path.join(run_path, "reports", "synthesis", filename))
         os.system("cat %s" % path)
 
     if args.antenna:
         filename = "*antenna.rpt"
-        path = check_path(os.path.join(run_path, "reports", "routing", filename))
+        path = check_path(os.path.join(run_path, "reports", "finishing", filename))
         if os.path.exists(path):
             antenna_report(path)
         else:
             print("no antenna file, did the run finish?")
 
     if args.floorplan:
-        path = check_path(os.path.join(run_path, "results", "floorplan", args.top + ".floorplan.def"))
+        path = check_path(os.path.join(run_path, "results", "floorplan", args.top + ".def"))
         os.system("klayout -l %s %s" % (klayout_def, path))
 
     if args.pdn:
@@ -263,7 +263,7 @@ if __name__ == '__main__':
         os.system("klayout -l %s %s" % (klayout_def, path))
 
     if args.global_placement:
-        filename = "*replace.def"
+        filename = "*global.def"
         path = check_path(os.path.join(run_path, "tmp", "placement", filename))
         os.system("klayout -l %s %s" % (klayout_def, path))
 
@@ -272,15 +272,15 @@ if __name__ == '__main__':
         os.system("klayout -l %s %s" % (klayout_def, path))
 
     if args.gds:
-        path = check_path(os.path.join(run_path, "results", "magic", args.top + ".gds"))
+        path = check_path(os.path.join(run_path, "results", "final", "gds", args.top + ".gds"))
         os.system("klayout -l %s %s" % (klayout_gds, path))
 
     if args.copy_gds:
-        path = check_path(os.path.join(run_path, "results", "magic", args.top + ".gds"))
+        path = check_path(os.path.join(run_path, "results", "final", "gds", args.top + ".gds"))
         copyfile(path, args.top + ".gds")
-        path = check_path(os.path.join(run_path, "results", "magic", args.top + ".lef"))
+        path = check_path(os.path.join(run_path, "results", "final", "lef", args.top + ".lef"))
         copyfile(path, args.top + ".lef")
-        path = check_path(os.path.join(run_path, "results", "lvs", args.top + ".lvs.powered.v"))
+        path = check_path(os.path.join(run_path, "results", "final", "verilog", "gl", args.top + ".v"))
         copyfile(path, args.top + ".lvs.powered.v")
         # def more complicated
         path = check_path(os.path.join(run_path, "results", "routing", "*" + args.top + ".def"))
