@@ -6,7 +6,7 @@ import glob
 import csv
 import sys
 import re
-from shutil import which, copyfile
+from shutil import which, copyfile, copytree
 import datetime
 
 def is_tool(name):
@@ -132,7 +132,7 @@ if __name__ == '__main__':
     parser.add_argument('--antenna', help='find and list any antenna violations', action='store_const', const=True)
 
     # some useful things to do
-    parser.add_argument('--copy-gds', help='copy gds, lef and powered verilog to the current working directory', action='store_const', const=True)
+    parser.add_argument('--copy-final', help='copy final files (gds, lef, powered verilog etc) to the current working directory', action='store_const', const=True)
 
     # klayout for intermediate files
     parser.add_argument('--floorplan', help='show floorplan', action='store_const', const=True)
@@ -264,6 +264,7 @@ if __name__ == '__main__':
         filename = "*pdn.def"
         path = check_path(os.path.join(run_path, "tmp", "floorplan", filename))
         copyfile(lef_path, os.path.join(run_path, "tmp", "floorplan", "tmp.lef"))
+        print("klayout -l %s %s" % (klayout_def, path))
         os.system("klayout -l %s %s" % (klayout_def, path))
 
     if args.global_placement:
@@ -282,22 +283,14 @@ if __name__ == '__main__':
         path = check_path(os.path.join(run_path, "results", "final", "gds", args.top + ".gds"))
         os.system("klayout -l %s %s" % (klayout_gds, path))
 
-    if args.copy_gds:
-        path = check_path(os.path.join(run_path, "results", "final", "gds", args.top + ".gds"))
-        copyfile(path, args.top + ".gds")
-        path = check_path(os.path.join(run_path, "results", "final", "lef", args.top + ".lef"))
-        copyfile(path, args.top + ".lef")
-        path = check_path(os.path.join(run_path, "results", "final", "verilog", "gl", args.top + ".v"))
-        copyfile(path, args.top + ".lvs.powered.v")
-        path = check_path(os.path.join(run_path, "results", "final", "def", args.top + ".def"))
-        copyfile(path, args.top + ".def")
-        path = check_path(os.path.join(run_path, "results", "final", "spef", args.top + ".spef"))
-        copyfile(path, args.top + ".spef")
+    if args.copy_final:
+        path = check_path(os.path.join(run_path, "results", "final"))
+        copytree(path, "final")
         # also take the pdk and openlane versions
         path = check_path(os.path.join(run_path, "OPENLANE_VERSION"))
-        copyfile(path, "OPENLANE_VERSION")
+        copyfile(path, os.path.join("final", "OPENLANE_VERSION"))
         path = check_path(os.path.join(run_path, "PDK_SOURCES"))
-        copyfile(path, "PDK_SOURCES")
+        copyfile(path, os.path.join("final", "PDK_SOURCES"))
 
     if args.gds_3d:
         if not is_tool('GDS3D'):
