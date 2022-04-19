@@ -87,7 +87,7 @@ def antenna_report(antenna_report):
 def check_and_sort_regressions(regressions):
     summaries = {}
     for run_path in regressions:
-        summary_file = os.path.join(run_path, "reports", "final_summary_report.csv")
+        summary_file = os.path.join(run_path, "reports", "metrics.csv")
         if not os.path.exists(summary_file):
             # print(f"run {os.path.basename(run_path)} summary file not found")
             continue
@@ -280,11 +280,11 @@ if __name__ == '__main__':
 
     # gds doesn't need a lef
     if args.gds:
-        path = check_path(os.path.join(run_path, "results", "final", "gds", args.top + ".gds"))
+        path = check_path(os.path.join(run_path, "results", "signoff", "gds", args.top + ".gds"))
         os.system("klayout -l %s %s" % (klayout_gds, path))
 
     if args.copy_final:
-        path = check_path(os.path.join(run_path, "results", "final"))
+        path = check_path(os.path.join(run_path, "results", "signoff"))
         copytree(path, "final")
         # also take the pdk and openlane versions
         path = check_path(os.path.join(run_path, "OPENLANE_VERSION"))
@@ -295,6 +295,6 @@ if __name__ == '__main__':
     if args.gds_3d:
         if not is_tool('GDS3D'):
             exit("pls install GDS3D from https://github.com/trilomix/GDS3D")
-        path = check_path(os.path.join(run_path, "results", "final", "gds", args.top + ".gds"))
+        path = check_path(os.path.join(run_path, "results", "signoff", "gds", args.top + ".gds"))
         os.system("GDS3D -p %s -i %s" % (gds3d_tech, path))
         
