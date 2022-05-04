@@ -12,6 +12,16 @@ Article: https://www.zerotoasiccourse.com/post/openlane_output_files/
 * Clone the repo somewhere and add the path to your $PATH
 * Ensure OPENLANE_ROOT and PDK_ROOT are set correctly
 
+## Example
+
+If you cloned the repo to /home/matt/openlane_summary and you are using bash as your shell, add this line to your ~/.bashrc:
+
+    export PATH=$PATH:/home/matt/openlane_summary
+
+This adds the repository path as one of the places that executables can be found. Then anywhere else in the filesystem you can run the program by typing on the commandline:
+
+    summary.py
+
 # Requirements
 
 * KLayout for most of the views
