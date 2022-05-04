@@ -6,7 +6,7 @@ import glob
 import csv
 import sys
 import re
-from shutil import which, copyfile
+from shutil import which, copyfile, copytree
 import datetime
 
 def is_tool(name):
@@ -65,12 +65,7 @@ def drc_report(drc_file):
     drc_count = 0
     with open(drc_file) as drc:
         for line in drc.readlines():
-            drc_count += 1
-            if '(' in line:
-                if last_drc is not None:
-                    print("* %s (%d)" % (last_drc, drc_count/4))
-                last_drc = line.strip()
-                drc_count = 0
+            print(line.strip())
 
 def antenna_report(antenna_report):
     violations = 0
@@ -137,7 +132,7 @@ if __name__ == '__main__':
     parser.add_argument('--antenna', help='find and list any antenna violations', action='store_const', const=True)
 
     # some useful things to do
-    parser.add_argument('--copy-gds', help='copy gds, lef and powered verilog to the current working directory', action='store_const', const=True)
+    parser.add_argument('--copy-final', help='copy final files (gds, lef, powered verilog etc) to the current working directory', action='store_const', const=True)
 
     # klayout for intermediate files
     parser.add_argument('--floorplan', help='show floorplan', action='store_const', const=True)
@@ -221,6 +216,11 @@ if __name__ == '__main__':
 
     print(run_path)
 
+    # check we can find a lef file, which is needed for viewing def files
+    lef_path = os.path.join(run_path, 'tmp', 'merged_unpadded.lef')
+    if not os.path.exists(lef_path):
+        print("no LEF file found, any views that use DEF files (floorplan, pdn, fine and detailed placement) will fail")
+        
     if args.summary:
         path = check_path(os.path.join(run_path, 'reports', 'final_summary_report.csv'))
         summary_report(path)
@@ -230,7 +230,7 @@ if __name__ == '__main__':
         full_summary_report(path)
 
     if args.drc:
-        path = os.path.join(run_path, 'logs', 'magic', 'magic.drc') # don't check path because if DRC is clean, don't get the file
+        path = os.path.join(run_path, 'reports', 'finishing', 'drc.rpt') # don't check path because if DRC is clean, don't get the file
         if os.path.exists(path):
             drc_report(path)
         else:
@@ -241,60 +241,60 @@ if __name__ == '__main__':
         os.system("xdot %s" % path)
 
     if args.yosys_report:
-        filename = "*yosys*.stat.rpt"
+        filename = "*synthesis*.stat.*"
         path = check_path(os.path.join(run_path, "reports", "synthesis", filename))
         os.system("cat %s" % path)
 
     if args.antenna:
         filename = "*antenna.rpt"
-        path = check_path(os.path.join(run_path, "reports", "routing", filename))
+        path = check_path(os.path.join(run_path, "reports", "finishing", filename))
         if os.path.exists(path):
             antenna_report(path)
         else:
             print("no antenna file, did the run finish?")
 
+    # these next 4 need the lef copied manually so klayout can find and show the cells
+    # this is a breaking change introduced by another output file re-organisation
     if args.floorplan:
-        path = check_path(os.path.join(run_path, "results", "floorplan", args.top + ".floorplan.def"))
+        path = check_path(os.path.join(run_path, "results", "floorplan", args.top + ".def"))
+        copyfile(lef_path, os.path.join(run_path, "results", "floorplan", "tmp.lef"))
         os.system("klayout -l %s %s" % (klayout_def, path))
 
     if args.pdn:
         filename = "*pdn.def"
         path = check_path(os.path.join(run_path, "tmp", "floorplan", filename))
+        copyfile(lef_path, os.path.join(run_path, "tmp", "floorplan", "tmp.lef"))
+        print("klayout -l %s %s" % (klayout_def, path))
         os.system("klayout -l %s %s" % (klayout_def, path))
 
     if args.global_placement:
-        filename = "*replace.def"
+        filename = "*global.def"
         path = check_path(os.path.join(run_path, "tmp", "placement", filename))
+        copyfile(lef_path, os.path.join(run_path, "tmp", "placement", "tmp.lef"))
         os.system("klayout -l %s %s" % (klayout_def, path))
 
     if args.detailed_placement:
-        path = check_path(os.path.join(run_path, "results", "placement", args.top + ".placement.def"))
+        path = check_path(os.path.join(run_path, "results", "placement", args.top + ".def"))
+        copyfile(lef_path, os.path.join(run_path, "results", "placement", "tmp.lef"))
         os.system("klayout -l %s %s" % (klayout_def, path))
 
+    # gds doesn't need a lef
     if args.gds:
-        path = check_path(os.path.join(run_path, "results", "magic", args.top + ".gds"))
+        path = check_path(os.path.join(run_path, "results", "final", "gds", args.top + ".gds"))
         os.system("klayout -l %s %s" % (klayout_gds, path))
 
-    if args.copy_gds:
-        path = check_path(os.path.join(run_path, "results", "magic", args.top + ".gds"))
-        copyfile(path, args.top + ".gds")
-        path = check_path(os.path.join(run_path, "results", "magic", args.top + ".lef"))
-        copyfile(path, args.top + ".lef")
-        path = check_path(os.path.join(run_path, "results", "lvs", args.top + ".lvs.powered.v"))
-        copyfile(path, args.top + ".lvs.powered.v")
-        # def more complicated
-        path = check_path(os.path.join(run_path, "results", "routing", "*" + args.top + ".def"))
-        path = glob.glob(path)[0]
-        copyfile(path, args.top + ".def")
+    if args.copy_final:
+        path = check_path(os.path.join(run_path, "results", "final"))
+        copytree(path, "final")
         # also take the pdk and openlane versions
         path = check_path(os.path.join(run_path, "OPENLANE_VERSION"))
-        copyfile(path, "OPENLANE_VERSION")
+        copyfile(path, os.path.join("final", "OPENLANE_VERSION"))
         path = check_path(os.path.join(run_path, "PDK_SOURCES"))
-        copyfile(path, "PDK_SOURCES")
+        copyfile(path, os.path.join("final", "PDK_SOURCES"))
 
     if args.gds_3d:
         if not is_tool('GDS3D'):
             exit("pls install GDS3D from https://github.com/trilomix/GDS3D")
-        path = check_path(os.path.join(run_path, "results", "magic", args.top + ".gds"))
+        path = check_path(os.path.join(run_path, "results", "final", "gds", args.top + ".gds"))
         os.system("GDS3D -p %s -i %s" % (gds3d_tech, path))
         
