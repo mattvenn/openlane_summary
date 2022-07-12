@@ -217,20 +217,20 @@ if __name__ == '__main__':
     print(run_path)
 
     # check we can find a lef file, which is needed for viewing def files
-    lef_path = os.path.join(run_path, 'tmp', 'merged_unpadded.lef')
+    lef_path = os.path.join(run_path, 'tmp', 'merged.unpadded.nom.lef')
     if not os.path.exists(lef_path):
         print("no LEF file found, any views that use DEF files (floorplan, pdn, fine and detailed placement) will fail")
         
     if args.summary:
-        path = check_path(os.path.join(run_path, 'reports', 'final_summary_report.csv'))
+        path = check_path(os.path.join(run_path, 'reports', 'metrics.csv'))
         summary_report(path)
 
     if args.full_summary:
-        path = check_path(os.path.join(run_path, 'reports', 'final_summary_report.csv'))
+        path = check_path(os.path.join(run_path, 'reports', 'metrics.csv'))
         full_summary_report(path)
 
     if args.drc:
-        path = os.path.join(run_path, 'reports', 'finishing', 'drc.rpt') # don't check path because if DRC is clean, don't get the file
+        path = os.path.join(run_path, 'reports', 'signoff', 'drc.rpt') # don't check path because if DRC is clean, don't get the file
         if os.path.exists(path):
             drc_report(path)
         else:
@@ -243,11 +243,11 @@ if __name__ == '__main__':
     if args.yosys_report:
         filename = "*synthesis*.stat.*"
         path = check_path(os.path.join(run_path, "reports", "synthesis", filename))
-        os.system("cat %s" % path)
+        os.system("cat '%s'" % path)
 
     if args.antenna:
         filename = "*antenna.rpt"
-        path = check_path(os.path.join(run_path, "reports", "finishing", filename))
+        path = check_path(os.path.join(run_path, "reports", "signoff", filename))
         if os.path.exists(path):
             antenna_report(path)
         else:
@@ -280,7 +280,7 @@ if __name__ == '__main__':
 
     # gds doesn't need a lef
     if args.gds:
-        path = check_path(os.path.join(run_path, "results", "signoff", "gds", args.top + ".gds"))
+        path = check_path(os.path.join(run_path, "results", "signoff", args.top + ".gds"))
         os.system("klayout -l %s %s" % (klayout_gds, path))
 
     if args.copy_final:
@@ -295,6 +295,6 @@ if __name__ == '__main__':
     if args.gds_3d:
         if not is_tool('GDS3D'):
             exit("pls install GDS3D from https://github.com/trilomix/GDS3D")
-        path = check_path(os.path.join(run_path, "results", "signoff", "gds", args.top + ".gds"))
+        path = check_path(os.path.join(run_path, "results", "signoff", args.top + ".gds"))
         os.system("GDS3D -p %s -i %s" % (gds3d_tech, path))
         
