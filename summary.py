@@ -286,6 +286,11 @@ if __name__ == '__main__':
     if args.copy_final:
         path = check_path(os.path.join(run_path, "results", "signoff"))
         copytree(path, "final")
+
+        # GL is in the wrong place
+        path = check_path(os.path.join(run_path, "results", "final", "verilog", "gl", args.top + ".v"))
+        copyfile(path, os.path.join("final", args.top + ".v"))
+
         # also take the pdk and openlane versions
         path = check_path(os.path.join(run_path, "OPENLANE_VERSION"))
         copyfile(path, os.path.join("final", "OPENLANE_VERSION"))
