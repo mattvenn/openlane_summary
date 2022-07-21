@@ -284,12 +284,8 @@ if __name__ == '__main__':
         os.system("klayout -l %s %s" % (klayout_gds, path))
 
     if args.copy_final:
-        path = check_path(os.path.join(run_path, "results", "signoff"))
+        path = check_path(os.path.join(run_path, "results", "final"))
         copytree(path, "final")
-
-        # GL is in the wrong place
-        path = check_path(os.path.join(run_path, "results", "final", "verilog", "gl", args.top + ".v"))
-        copyfile(path, os.path.join("final", args.top + ".v"))
 
         # also take the pdk and openlane versions
         path = check_path(os.path.join(run_path, "OPENLANE_VERSION"))
