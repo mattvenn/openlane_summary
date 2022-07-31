@@ -222,7 +222,7 @@ if __name__ == '__main__':
     lef_path = os.path.join(run_path, 'tmp', 'merged_unpadded.lef')
     if not os.path.exists(lef_path):
         print("No LEF file found, any views that use DEF files (floorplan, pdn, fine and detailed placement) will fail")
-        print("Make sure you check it out to the right MPW branch (git checkout mpw7).")
+        print("Make sure you check openlane_summary out to the right MPW branch (git checkout mpw7).")
     if args.summary:
         path = check_path(os.path.join(run_path, 'reports', 'final_summary_report.csv'))
         summary_report(path)
