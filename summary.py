@@ -15,9 +15,9 @@ def is_tool(name):
 def check_path(path):
     paths = glob.glob(path)
     if len(paths) == 0:
-        exit("file not found: %s" % path)
+        exit("ERROR: file not found: %s" % path)
     if len(paths) > 1:
-        print("warning: glob pattern found too many files, using first one: %s" % paths[0])
+        print("Warning: glob pattern found too many files, using first one: %s" % paths[0])
     
     return paths[0]
 
@@ -82,7 +82,7 @@ def antenna_report(antenna_report):
                     print(line.strip(), ": can ignore")
 
     if violations > 0:
-        print("for more info on antenna reports see https://www.zerotoasiccourse.com/terminology/antenna-report/")
+        print("For more info on antenna reports see https://www.zerotoasiccourse.com/terminology/antenna-report/")
 
 def check_and_sort_regressions(regressions):
     summaries = {}
@@ -151,7 +151,8 @@ if __name__ == '__main__':
         args.top = args.design 
 
     if not 'OPENLANE_ROOT' in os.environ:
-        exit("pls set OPENLANE_ROOT to where your OpenLANE is installed")
+        print("ERROR: Couldn't find OPENLANE_ROOT environment variable.")
+        exit("Please set OPENLANE_ROOT to where your OpenLANE is installed")
 
     klayout_def = os.path.join(os.path.dirname(sys.argv[0]), 'klayout_def.xml')
     klayout_gds = os.path.join(os.path.dirname(sys.argv[0]), 'klayout_gds.xml')
@@ -160,7 +161,8 @@ if __name__ == '__main__':
     # if showing off the sky130 cells
     if args.show_sky130:
         if not os.environ['PDK_ROOT']:
-            exit("pls set PDK_ROOT to where your PDK is installed")
+            print("ERROR: Couldn't find PDK_ROOT environment variable.")
+            exit("Please set PDK_ROOT to where your PDK is installed")
         path = check_path(os.path.join(os.environ['PDK_ROOT'], "sky130A", "libs.ref", "sky130_fd_sc_hd", "gds", "sky130_fd_sc_hd.gds"))
         os.system("klayout -l %s %s" % (klayout_gds, path))
         exit()
@@ -185,12 +187,12 @@ if __name__ == '__main__':
 
     list_of_files = glob.glob(run_dir)
     if len(list_of_files) == 0:
-        exit("couldn't find that design")
+        exit("ERROR: Couldn't find that design")
     if args.regression:
         print(f"found {len(list_of_files)} regression variants, sorting by number of violations")
         list_of_files = check_and_sort_regressions(list_of_files)
         if len(list_of_files) == 0:
-            exit("no successful regression runs found")
+            exit("ERROR: No successful regression runs found")
         run_path = list_of_files[0]
     else:
         list_of_files.sort(key=openlane_date_sort)
@@ -219,8 +221,8 @@ if __name__ == '__main__':
     # check we can find a lef file, which is needed for viewing def files
     lef_path = os.path.join(run_path, 'tmp', 'merged_unpadded.lef')
     if not os.path.exists(lef_path):
-        print("no LEF file found, any views that use DEF files (floorplan, pdn, fine and detailed placement) will fail")
-        
+        print("No LEF file found, any views that use DEF files (floorplan, pdn, fine and detailed placement) will fail")
+        print("Please make sure openlane_summary is on the correct MPW branch.")
     if args.summary:
         path = check_path(os.path.join(run_path, 'reports', 'final_summary_report.csv'))
         summary_report(path)
@@ -234,7 +236,7 @@ if __name__ == '__main__':
         if os.path.exists(path):
             drc_report(path)
         else:
-            print("no DRC file, DRC clean?")
+            print("No DRC file, DRC clean?")
 
     if args.synth:
         path = check_path(os.path.join(run_path, "tmp", "synthesis", "post_techmap.dot")) # post_techmap is created by https://github.com/efabless/openlane/pull/282
@@ -251,7 +253,7 @@ if __name__ == '__main__':
         if os.path.exists(path):
             antenna_report(path)
         else:
-            print("no antenna file, did the run finish?")
+            print("No antenna file, did the run finish?")
 
     # these next 4 need the lef copied manually so klayout can find and show the cells
     # this is a breaking change introduced by another output file re-organisation
@@ -294,7 +296,8 @@ if __name__ == '__main__':
 
     if args.gds_3d:
         if not is_tool('GDS3D'):
-            exit("pls install GDS3D from https://github.com/trilomix/GDS3D")
+            print("ERROR: Couldn't find GDS3D.")
+            exit("Please install GDS3D from https://github.com/trilomix/GDS3D")
         path = check_path(os.path.join(run_path, "results", "final", "gds", args.top + ".gds"))
         os.system("GDS3D -p %s -i %s" % (gds3d_tech, path))
         
