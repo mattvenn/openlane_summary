@@ -217,7 +217,7 @@ if __name__ == '__main__':
     print(run_path)
 
     # check we can find a lef file, which is needed for viewing def files
-    lef_path = os.path.join(run_path, 'tmp', 'merged.unpadded.nom.lef')
+    lef_path = os.path.join(run_path, 'tmp', 'merged.nom.lef')
     if not os.path.exists(lef_path):
         print("no LEF file found, any views that use DEF files (floorplan, pdn, fine and detailed placement) will fail")
         
