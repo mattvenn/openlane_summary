@@ -1487,7 +1487,7 @@
   <dither-pattern>C45</dither-pattern>
   <line-style>C0</line-style>
   <valid>true</valid>
-  <visible>false</visible>
+  <visible>true</visible>
   <transparent>false</transparent>
   <width>1</width>
   <marked>false</marked>
@@ -1854,8 +1854,8 @@
   <source>70/14@1</source>
  </properties>
  <properties>
-  <frame-color>#00ffff</frame-color>
-  <fill-color>#00ffff</fill-color>
+  <frame-color>#800080</frame-color>
+  <fill-color>#800080</fill-color>
   <frame-brightness>0</frame-brightness>
   <fill-brightness>0</fill-brightness>
   <dither-pattern>C34</dither-pattern>
