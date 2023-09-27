@@ -9,7 +9,7 @@ Article: https://www.zerotoasiccourse.com/post/openlane_output_files/
 
 # Compatibility
 
-These tools are currently working for MPW7 tagged OpenLane.
+These tools are currently working for MPW9 tagged OpenLane. Check other branches for other versions.
 
 # Setup
 
