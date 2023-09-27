@@ -151,8 +151,9 @@ if __name__ == '__main__':
         args.top = args.design 
 
     if not 'OPENLANE_ROOT' in os.environ:
-        print("ERROR: Couldn't find OPENLANE_ROOT environment variable.")
-        exit("Please set OPENLANE_ROOT to where your OpenLANE is installed")
+        exit("please set OPENLANE_ROOT to where your OpenLane is installed")
+    if not 'PDK_ROOT' in os.environ:
+        exit("please set PDK_ROOT to where your PDK is installed")
 
     klayout_def = os.path.join(os.path.dirname(sys.argv[0]), 'klayout_def.xml')
     klayout_gds = os.path.join(os.path.dirname(sys.argv[0]), 'klayout_gds.xml')
@@ -160,9 +161,6 @@ if __name__ == '__main__':
 
     # if showing off the sky130 cells
     if args.show_sky130:
-        if not os.environ['PDK_ROOT']:
-            print("ERROR: Couldn't find PDK_ROOT environment variable.")
-            exit("Please set PDK_ROOT to where your PDK is installed")
         path = check_path(os.path.join(os.environ['PDK_ROOT'], "sky130A", "libs.ref", "sky130_fd_sc_hd", "gds", "sky130_fd_sc_hd.gds"))
         os.system("klayout -l %s %s" % (klayout_gds, path))
         exit()
@@ -187,12 +185,12 @@ if __name__ == '__main__':
 
     list_of_files = glob.glob(run_dir)
     if len(list_of_files) == 0:
-        exit("ERROR: Couldn't find that design")
+        exit("couldn't find that design")
     if args.regression:
         print(f"found {len(list_of_files)} regression variants, sorting by number of violations")
         list_of_files = check_and_sort_regressions(list_of_files)
         if len(list_of_files) == 0:
-            exit("ERROR: No successful regression runs found")
+            exit("no successful regression runs found")
         run_path = list_of_files[0]
     else:
         list_of_files.sort(key=openlane_date_sort)
@@ -220,74 +218,83 @@ if __name__ == '__main__':
 
     # check we can find a lef file, which is needed for viewing def files
     lef_path = os.path.join(run_path, 'tmp', 'merged.nom.lef')
+    def_warning = "any views that use DEF files (floorplan, pdn, fine and detailed placement) will fail"
     if not os.path.exists(lef_path):
-        print("No LEF file found, any views that use DEF files (floorplan, pdn, fine and detailed placement) will fail")
-        print("Please make sure openlane_summary is on the correct MPW branch.")
+        print(f"no LEF file found, {def_warning}")
+
+    klayout_tech = "/volare/sky130/versions/*/sky130A/libs.tech/klayout/tech/"
+    lyt = check_path(os.environ['PDK_ROOT'] + klayout_tech + "sky130A.lyt")
+    if not lyt:
+        print("sky130A.lyt not found in PDK_ROOT, {def_warning}")
+
+    lyp = check_path(os.environ['PDK_ROOT'] + klayout_tech + "sky130A.lyp")
+    if not lyp:
+        print("sky130A.lyp not found in PDK_ROOT, {def_warning}")
+
+    lym = check_path(os.environ['PDK_ROOT'] + klayout_tech + "sky130A.map")
+    if not lym:
+        print("sky130A.map not found in PDK_ROOT, {def_warning}")
+        
     if args.summary:
-        path = check_path(os.path.join(run_path, 'reports', 'final_summary_report.csv'))
+        path = check_path(os.path.join(run_path, 'reports', 'metrics.csv'))
         summary_report(path)
 
     if args.full_summary:
-        path = check_path(os.path.join(run_path, 'reports', 'final_summary_report.csv'))
+        path = check_path(os.path.join(run_path, 'reports', 'metrics.csv'))
         full_summary_report(path)
 
     if args.drc:
-        path = os.path.join(run_path, 'reports', 'finishing', 'drc.rpt') # don't check path because if DRC is clean, don't get the file
+        path = os.path.join(run_path, 'reports', 'signoff', 'drc.rpt') # don't check path because if DRC is clean, don't get the file
         if os.path.exists(path):
             drc_report(path)
         else:
-            print("No DRC file, DRC clean?")
+            print("no DRC file, DRC clean?")
 
     if args.synth:
         path = check_path(os.path.join(run_path, "tmp", "synthesis", "post_techmap.dot")) # post_techmap is created by https://github.com/efabless/openlane/pull/282
+        print(path)
         os.system("xdot %s" % path)
 
     if args.yosys_report:
         filename = "*synthesis*.stat.*"
         path = check_path(os.path.join(run_path, "reports", "synthesis", filename))
-        os.system("cat %s" % path)
+        os.system("cat '%s'" % path)
 
     if args.antenna:
-        filename = "*antenna.rpt"
-        path = check_path(os.path.join(run_path, "reports", "finishing", filename))
+        filename = "*antenna_violators.rpt"
+        path = check_path(os.path.join(run_path, "reports", "signoff", filename))
         if os.path.exists(path):
             antenna_report(path)
         else:
-            print("No antenna file, did the run finish?")
+            print("no antenna file, did the run finish?")
 
-    # these next 4 need the lef copied manually so klayout can find and show the cells
-    # this is a breaking change introduced by another output file re-organisation
+    # these next 4 all need to use a special script to open them as they are def files
+    open_design = "$OPENLANE_ROOT/scripts/klayout/open_design.py"
     if args.floorplan:
-        path = check_path(os.path.join(run_path, "results", "floorplan", args.top + ".def"))
-        copyfile(lef_path, os.path.join(run_path, "results", "floorplan", "tmp.lef"))
-        os.system("klayout -l %s %s" % (klayout_def, path))
+        path = check_path(os.path.join(run_path, "tmp", "floorplan", "4*def"))
+        os.system(f"{open_design} --input-lef {lef_path} --lyt {lyt} --lym {lym} --lyp {lyp} {path}")
 
     if args.pdn:
-        filename = "*pdn.def"
-        path = check_path(os.path.join(run_path, "tmp", "floorplan", filename))
-        copyfile(lef_path, os.path.join(run_path, "tmp", "floorplan", "tmp.lef"))
-        print("klayout -l %s %s" % (klayout_def, path))
-        os.system("klayout -l %s %s" % (klayout_def, path))
+        path = check_path(os.path.join(run_path, "results", "floorplan", "*def"))
+        os.system(f"{open_design} --input-lef {lef_path} --lyt {lyt} --lym {lym} --lyp {lyp} {path}")
 
     if args.global_placement:
-        filename = "*global.def"
-        path = check_path(os.path.join(run_path, "tmp", "placement", filename))
-        copyfile(lef_path, os.path.join(run_path, "tmp", "placement", "tmp.lef"))
-        os.system("klayout -l %s %s" % (klayout_def, path))
+        path = check_path(os.path.join(run_path, "tmp", "placement", "*global.def"))
+        os.system(f"{open_design} --input-lef {lef_path} --lyt {lyt} --lym {lym} --lyp {lyp} {path}")
 
     if args.detailed_placement:
         path = check_path(os.path.join(run_path, "results", "placement", args.top + ".def"))
-        copyfile(lef_path, os.path.join(run_path, "results", "placement", "tmp.lef"))
-        os.system("klayout -l %s %s" % (klayout_def, path))
+        os.system(f"{open_design} --input-lef {lef_path} --lyt {lyt} --lym {lym} --lyp {lyp} {path}")
 
     # gds doesn't need a lef
     if args.gds:
-        path = check_path(os.path.join(run_path, "results", "final", "gds", args.top + ".gds"))
+        path = check_path(os.path.join(run_path, "results", "signoff", args.top + ".gds"))
         os.system("klayout -l %s %s" % (klayout_gds, path))
 
     if args.copy_final:
         path = check_path(os.path.join(run_path, "results", "final"))
         copytree(path, "final")
+
         # also take the pdk and openlane versions
         path = check_path(os.path.join(run_path, "OPENLANE_VERSION"))
         copyfile(path, os.path.join("final", "OPENLANE_VERSION"))
