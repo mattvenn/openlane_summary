@@ -154,6 +154,8 @@ if __name__ == '__main__':
         exit("please set OPENLANE_ROOT to where your OpenLane is installed")
     if not 'PDK_ROOT' in os.environ:
         exit("please set PDK_ROOT to where your PDK is installed")
+    if not 'TARGET_PATH' in os.environ:
+        exit("please set TARGET_PATH to where your caravel_user_project is installed")
 
     klayout_def = os.path.join(os.path.dirname(sys.argv[0]), 'klayout_def.xml')
     klayout_gds = os.path.join(os.path.dirname(sys.argv[0]), 'klayout_gds.xml')
@@ -168,10 +170,7 @@ if __name__ == '__main__':
     # otherwise need to know where openlane and the designs are
     openlane_designs = ''
     if args.caravel:
-        if os.path.exists('openlane'):
-            openlane_designs = 'openlane'
-        else:
-            openlane_designs = '.'
+        openlane_designs = os.path.join(os.environ['TARGET_PATH'], 'openlane')
         run_dir = os.path.join(openlane_designs, args.design, 'runs/*')
 
     else:
@@ -272,6 +271,13 @@ if __name__ == '__main__':
     open_design = "$OPENLANE_ROOT/scripts/klayout/open_design.py"
     if args.floorplan:
         path = check_path(os.path.join(run_path, "tmp", "floorplan", "4*def"))
+        print(f"{open_design} --input-lef {lef_path} --lyt {lyt} --lym {lym} --lyp {lyp} {path}")
+        print(f"{lef_path}")
+        print(f"{lyt}")
+        print(f"{lym}")
+        print(f"{lyp}")
+        print(f"{path}")
+        print(f"{open_design} --input-lef {lef_path} --lyt {lyt} --lym {lym} --lyp {lyp} {path}")
         os.system(f"{open_design} --input-lef {lef_path} --lyt {lyt} --lym {lym} --lyp {lyp} {path}")
 
     if args.pdn:
